@@ -1,4 +1,4 @@
-cchat
-=====
+tda382-lab3-code-skeleton
+=========================
 
-Lab 3 and 4 in course tda382 at chalmers. an chat client and server solution in erlang.
+Code skeleton for Lab 3 (Course TDA382 - Chalmers)
