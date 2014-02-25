@@ -7,11 +7,11 @@
 %%%% Connect
 %%%%%%%%%%%%%%%
 loop(St, {connect, _Server}) ->
-	case {string:equal(_Server, "shire")} of
-	{false} ->
+	case {whereis(list_to_atom(_Server))} of
+	{undefined} ->
 		NewSt = St,
 		Result = {error, server_not_reached,"Connect timeout"};
-	{true} ->
+	{_} ->
 		Result = genserver:request(list_to_atom(_Server),{connect,self()}),
 		NewSt = St#cl_st{server =  list_to_atom(_Server)}
 	end,
