@@ -12,8 +12,9 @@ loop(St, {connect, _Server}) ->
 		NewSt = St,
 		Result = {error, server_not_reached,"Connect timeout"};
 	{_} ->
-		Result = genserver:request(list_to_atom(_Server),{connect,self()}),
-		NewSt = St#cl_st{server =  list_to_atom(_Server)}
+		NewServer = list_to_atom(_Server),
+		Result = genserver:request(NewServer,{connect,self(),St#cl_st.nick}),
+		NewSt = St#cl_st{server =  NewServer}
 	end,
 	{Result, NewSt};
 %%%%%%%%%%%%%%%
@@ -63,8 +64,6 @@ loop(St, {msg_from_GUI, _Channel, _Msg}) ->
 %%%%%%%%%%%%%%
 loop(St, whoiam) ->
 	Uname = St#cl_st.nick,
-	GUIName = St#cl_st.gui,
-	io:format("I am ~p~nMy gui is ~p",[Uname,GUIName]),
     {Uname, St} ;
 
 %%%%%%%%%%
@@ -72,7 +71,6 @@ loop(St, whoiam) ->
 %%%%%%%%%%
 loop(St,{nick,_Nick}) ->
 	NewSt = St#cl_st{nick = _Nick},
-	io:format("Client nick is: ~p~n",[NewSt#cl_st.nick]),
     {ok, NewSt} ;
 
 %%%%%%%%%%%%%
@@ -89,7 +87,6 @@ loop(St = #cl_st { gui = GUIName }, {message,Channel, Name, Msg}) ->
     {ok, St};
 
 loop(St, _) ->
-	io:format("No match"),
 	{ok, St}.
 
 initial_state(Nick, GUIName) ->

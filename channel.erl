@@ -4,13 +4,11 @@
 -include_lib("./defs.hrl").
 
 loop(St, {join, ClientPID}) ->
-	ClientList = St#channel_st.clients,
-	io:format("~p",[lists:member(ClientPID, ClientList)]),
-	case {lists:member(ClientPID, ClientList)} of
+	case {lists:member(ClientPID, St#channel_st.clients)} of
 	{true} -> 
 		{{error, user_already_joined,"You are already joined"}, St};
 	{false} ->
-		NewSt = St#channel_st{clients=[ClientPID] ++ ClientList },
+		NewSt = St#channel_st{clients=[ClientPID] ++ St#channel_st.clients },
 		{ok, NewSt}
 	end;
 	
@@ -31,8 +29,6 @@ loop(St, {leave, ClientPID}) ->
 	{true} ->
 		ClientList = lists:delete(ClientPID,St#channel_st.clients),
 		NewSt = St#channel_st{clients = ClientList},
-		IsUserStillInChannel = lists:member(ClientPID, NewSt#channel_st.clients),
-		io:format("~nIs user still in channel? :~p~n",[IsUserStillInChannel]),
 		{ok, NewSt};
 	{false} ->
 		{{error, user_not_joined,"You are not in this channel"}, St}

@@ -13,7 +13,9 @@ loop(St, {connect,ClientPID,Nick}) ->
 			Result = {error, user_already_connected, "You are already connected to this server"};
 		{false} ->
 			Result = ok,
-			NewSt = St#server_st{clients=[{ClientPID,Nick}] ++ ClientList }
+			NewClientList = [{ClientPID, Nick}] ++ ClientList,
+			NewSt = St#server_st{clients=NewClientList },
+			io:format("Connect: ~n~p~n",[NewSt])
 	end,
 	{Result, NewSt};
 
@@ -31,36 +33,34 @@ loop(St, {disconnect, ClientPID}) ->
 	end,
 	{Result, NewSt};
 
+%Join channel
 loop(St, {join, Channel,ClientPID}) ->
 	case {lists:member(list_to_atom(Channel),St#server_st.channels)} of
-		{false} -> io:format("Creating new channel"),
+		{false} -> %Channel does not exist, create new channel
 				genserver:start(list_to_atom(Channel), channel:initial_state(Channel), fun channel:loop/2),
-				ChannelList = St#server_st.channels,
-				NewSt = St#server_st{channels=ChannelList++[list_to_atom(Channel)]},
+				NewSt = St#server_st{channels=St#server_st.channels++[list_to_atom(Channel)]},
 				Result = genserver:request(list_to_atom(Channel),{join,ClientPID});
-		{true} -> Result = genserver:request(list_to_atom(Channel),{join,ClientPID}),
+		{true} -> %Channel exists, join channel
+				Result = genserver:request(list_to_atom(Channel),{join,ClientPID}),
 				NewSt=St
 	end,
-	io:format("~p",[Result]),
 	{Result, NewSt};
 	
 loop(St, _Msg) ->  
     {ok, St}.
 
 isNickTaken(Nick, ClientList) ->
-	{_, Nicks} = lists:unzip(ClientList),
-	io:format("~p~n~p",[Nick,Nicks]),
-	case {lists:member(Nick, Nicks)} of
-	{true} -> Result = true;
-	{false} -> Result = false
+	case {lists:keyfind(Nick,2,ClientList)} of
+		{false} -> Result= false;
+		{_} -> Result = true
 	end,
-	{Result}.
-
+	Result.
 isPIDConnected(ClientPID, ClientList) ->
-	{ClientPIDs, _} = lists:unzip(ClientList),
-	Result = lists:member(ClientPID, ClientPIDs),
-	{Result}.
-
+	case {lists:keyfind(ClientPID,1,ClientList)} of
+		{false} -> Result= false;
+		{_} -> Result = true
+	end,
+	Result.
 
 initial_state(_Server) ->
     #server_st{name=list_to_atom(_Server),clients=[]}.
